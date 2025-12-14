@@ -1,0 +1,157 @@
+You are a senior mobile architect, backend engineer, and ML engineer combined.
+
+Build a production-ready mobile application called "QueueSense".
+
+GOAL:
+Predict real-time waiting time at banks, hospitals, and government offices using live crowd input and historical data, and suggest the best visiting time.
+
+TARGET:
+High-quality final year CSE project that demonstrates:
+• Data aggregation
+• Prediction algorithms
+• Scalable backend
+• Clean, modern UI
+• Real-world usability
+
+––––––––––––––––
+FUNCTIONAL REQUIREMENTS
+––––––––––––––––
+
+1. USER FLOW
+• Anonymous user onboarding (no login required initially)
+• Select location type (Bank / Hospital / Govt Office)
+• Select specific branch/location
+• Check-in with:
+  - Number of people ahead
+  - Current queue stage (optional)
+• View:
+  - Estimated waiting time (minutes)
+  - Queue trend (increasing / stable / decreasing)
+  - Best time to visit today
+• Optional notifications for low crowd periods
+
+2. DATA COLLECTION
+• Anonymous check-ins
+• Timestamp-based queue entries
+• Location-based aggregation
+• Duplicate prevention logic
+• Confidence scoring per entry
+
+3. PREDICTION LOGIC
+• Combine:
+  - Live crowd count
+  - Historical visit patterns
+  - Time-of-day trends
+  - Day-of-week patterns
+• Output:
+  - Estimated wait time
+  - Accuracy confidence %
+• Use:
+  - Moving averages initially
+  - Upgradeable to ML regression model
+
+4. EDGE CASES
+• Sparse data handling
+• Sudden crowd spikes
+• Fake input detection
+• Offline check-in queueing
+
+––––––––––––––––
+FRONTEND REQUIREMENTS
+––––––––––––––––
+
+• Platform: Flutter (Material 3)
+• Design:
+  - Minimal
+  - Clean
+  - Trustworthy (bank/hospital style)
+• Pages:
+  - Home (location selector)
+  - Live Queue Status
+  - Prediction Graph
+  - Best Time Suggestions
+• Components:
+  - Animated wait-time indicator
+  - Crowd heat indicator
+  - Line graph for trends
+• UX:
+  - Fast
+  - One-hand usage
+  - Clear visuals
+
+––––––––––––––––
+BACKEND REQUIREMENTS
+––––––––––––––––
+
+• Stack:
+  - Node.js + Express
+  - PostgreSQL
+  - Redis (for live aggregation)
+• API Design:
+  - RESTful
+  - Scalable
+  - Secure
+• Endpoints:
+  - /checkin
+  - /queue-status
+  - /predict
+  - /best-time
+• Architecture:
+  - Modular
+  - Clean folder structure
+  - Separation of concerns
+
+––––––––––––––––
+DATABASE DESIGN
+––––––––––––––––
+
+Design normalized tables:
+• locations
+• checkins
+• predictions
+• time_slots
+
+Include:
+• Indexing strategy
+• Aggregation queries
+• Retention policy
+
+––––––––––––––––
+ALGORITHMIC DETAILS
+––––––––––––––––
+
+Explain and implement:
+• Queue wait estimation formula
+• Time-series smoothing
+• Outlier rejection
+• Confidence scoring
+
+––––––––––––––––
+DELIVERABLES
+––––––––––––––––
+
+1. Full Flutter UI code (screens + widgets)
+2. Backend source code (Express API)
+3. SQL schema
+4. Prediction logic (pseudo + code)
+5. API documentation
+6. Sample data + test cases
+7. Deployment guide
+8. Future ML upgrade plan
+
+––––––––––––––––
+QUALITY BAR
+––––––––––––––––
+
+• Production-grade
+• Clean code
+• Proper comments
+• Industry-level naming
+• Ready for demo & viva
+
+Start by:
+1. Designing system architecture
+2. Defining database schema
+3. Writing backend APIs
+4. Building frontend UI
+5. Explaining prediction logic clearly
