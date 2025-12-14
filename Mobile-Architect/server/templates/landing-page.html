@@ -1,151 +1,357 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <title>APP_NAME_PLACEHOLDER</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        max-width: 500px;
-        margin: 50px auto;
-        padding: 20px;
-        text-align: center;
-      }
-      .loading {
-        display: none;
-        font-size: 18px;
-        color: #666;
-        margin: 60px 0;
-      }
-      .spinner {
-        border: 3px solid #f3f3f3;
-        border-top: 3px solid #333;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        animation: spin 1s linear infinite;
-        margin: 20px auto;
-      }
-      @keyframes spin {
-        0% {
-          transform: rotate(0deg);
-        }
-        100% {
-          transform: rotate(360deg);
-        }
-      }
-      .content {
-        display: block;
-      }
-      .qr-code {
-        width: 250px;
-        height: 250px;
-        margin: 30px auto;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        padding: 15px;
-
-        canvas {
-          width: 100%;
-          height: 100%;
-        }
-      }
-      .platform-links {
-        margin: 30px 0;
-      }
-      .platform-link {
-        display: block;
-        padding: 14px 24px;
-        margin: 12px auto;
-        max-width: 300px;
-        font-size: 16px;
-        border: 1px solid #000;
-        border-radius: 8px;
-        text-decoration: none;
-        color: #000;
-        background: white;
-        min-height: 40px;
+      * {
+        margin: 0;
+        padding: 0;
         box-sizing: border-box;
       }
-      .platform-link:hover {
-        background: #f5f5f5;
+
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: linear-gradient(180deg, #F8FAFC 0%, #EFF6FF 50%, #DBEAFE 100%);
+        min-height: 100vh;
+        color: #0F172A;
+        -webkit-font-smoothing: antialiased;
       }
-      .download-links {
-        margin-top: 40px;
-        padding-top: 30px;
-        border-top: 1px solid #ddd;
+
+      .container {
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 40px 24px 60px;
+        text-align: center;
       }
-      .install-button {
+
+      .hero {
+        margin-bottom: 40px;
+      }
+
+      .logo-container {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 12px 16px;
-        margin: 0 6px;
-        font-size: 14px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+        border-radius: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 20px 40px -12px rgba(37, 99, 235, 0.4);
+      }
+
+      .logo-container img {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+      }
+
+      .app-name {
+        font-size: 32px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        margin-bottom: 12px;
+        background: linear-gradient(135deg, #0F172A 0%, #334155 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .tagline {
+        font-size: 17px;
+        color: #64748B;
+        line-height: 1.6;
+        max-width: 320px;
+        margin: 0 auto;
+      }
+
+      .loading {
+        display: none;
+        padding: 80px 0;
+      }
+
+      .loading.active {
+        display: block;
+      }
+
+      .spinner-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .spinner {
+        width: 48px;
+        height: 48px;
+        border: 3px solid #E2E8F0;
+        border-top-color: #2563EB;
+        border-radius: 50%;
+        animation: spin 0.8s ease-in-out infinite;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      .spinner-text {
+        font-size: 16px;
+        color: #64748B;
+        font-weight: 500;
+      }
+
+      .content {
+        display: block;
+      }
+
+      .content.hidden {
+        display: none;
+      }
+
+      .qr-section {
+        background: #FFFFFF;
+        border-radius: 28px;
+        padding: 32px;
+        margin-bottom: 32px;
+        box-shadow: 0 4px 24px -4px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(15, 23, 42, 0.04);
+      }
+
+      .qr-label {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #64748B;
+        margin-bottom: 20px;
+      }
+
+      .qr-code {
+        width: 220px;
+        height: 220px;
+        margin: 0 auto;
+      }
+
+      .qr-code canvas {
+        width: 100% !important;
+        height: 100% !important;
+      }
+
+      .primary-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        padding: 18px 28px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #FFFFFF;
+        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+        border: none;
+        border-radius: 16px;
         text-decoration: none;
-        color: #333;
-        background: white;
-        min-height: 40px;
-        box-sizing: border-box;
+        cursor: pointer;
+        box-shadow: 0 8px 24px -4px rgba(37, 99, 235, 0.35);
+        transition: all 0.2s ease;
+        margin-bottom: 16px;
       }
-      .install-button:hover {
-        background: #f5f5f5;
+
+      .primary-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 32px -4px rgba(37, 99, 235, 0.45);
       }
-      .store-icon {
-        width: 16px;
-        height: 16px;
-        margin-right: 6px;
-        border-radius: 0px;
+
+      .primary-button:active {
+        transform: translateY(0);
       }
-      .app-store-icon {
+
+      .primary-button svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .divider {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin: 28px 0;
+      }
+
+      .divider-line {
+        flex: 1;
+        height: 1px;
+        background: #E2E8F0;
+      }
+
+      .divider-text {
+        font-size: 12px;
+        font-weight: 500;
+        color: #94A3B8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .store-buttons {
+        display: flex;
+        gap: 12px;
+      }
+
+      .store-button {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 14px 16px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #0F172A;
+        background: #FFFFFF;
+        border: 1.5px solid #E2E8F0;
+        border-radius: 12px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+      }
+
+      .store-button:hover {
+        border-color: #CBD5E1;
+        background: #F8FAFC;
+      }
+
+      .store-button img {
+        width: 18px;
+        height: 18px;
         border-radius: 4px;
       }
-      .install-text {
-        color: #999;
-        font-size: 14px;
-        margin-bottom: 10px;
+
+      .features {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-top: 48px;
+        padding-top: 32px;
+        border-top: 1px solid #E2E8F0;
+      }
+
+      .feature {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .feature-icon {
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+        border-radius: 12px;
+      }
+
+      .feature-icon svg {
+        width: 22px;
+        height: 22px;
+        color: #2563EB;
+      }
+
+      .feature-text {
+        font-size: 12px;
+        font-weight: 500;
+        color: #64748B;
+      }
+
+      .footer {
+        margin-top: 48px;
+        font-size: 13px;
+        color: #94A3B8;
       }
     </style>
   </head>
   <body>
-    <div class="loading" id="loading">
-      <div class="spinner"></div>
-      <div>Opening in Expo Go...</div>
-    </div>
-
-    <div class="content" id="content">
-      <div class="qr-code" id="qr-code"></div>
-
-      <div class="platform-links">
-        <a href="exps://EXPS_URL_PLACEHOLDER" class="platform-link">Open APP_NAME_PLACEHOLDER in Expo Go</a>
+    <div class="container">
+      <div class="hero">
+        <div class="logo-container">
+          <img src="assets/images/icon.png" alt="APP_NAME_PLACEHOLDER" />
+        </div>
+        <h1 class="app-name">APP_NAME_PLACEHOLDER</h1>
+        <p class="tagline">Save time by predicting wait times at banks, hospitals, and government offices.</p>
       </div>
 
-      <div class="download-links">
-        <div class="install-text">Install Expo Go to Run</div>
-        <div>
-          <a
-            href="https://apps.apple.com/app/id982107779"
-            class="install-button"
-            target="_blank"
-            ><img
-              src="https://apps.apple.com/assets/images/favicon/favicon-apps-48-fad34e0d87e86dcf72ded1faff4ba9d0.png"
-              class="app-store-icon store-icon"
-              alt=""
-            />App Store</a
-          >
-          <a
-            href="https://play.google.com/store/apps/details?id=host.exp.exponent"
-            class="install-button"
-            target="_blank"
-            ><img
-              src="https://www.gstatic.com/android/market_images/web/favicon_v3.ico"
-              class="store-icon"
-              alt=""
-            />Google Play</a
-          >
+      <div class="loading" id="loading">
+        <div class="spinner-container">
+          <div class="spinner"></div>
+          <span class="spinner-text">Opening in Expo Go...</span>
+        </div>
+      </div>
+
+      <div class="content" id="content">
+        <div class="qr-section">
+          <div class="qr-label">Scan with Expo Go</div>
+          <div class="qr-code" id="qr-code"></div>
+        </div>
+
+        <a href="exps://EXPS_URL_PLACEHOLDER" class="primary-button">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          Open in Expo Go
+        </a>
+
+        <div class="divider">
+          <div class="divider-line"></div>
+          <span class="divider-text">Install Expo Go</span>
+          <div class="divider-line"></div>
+        </div>
+
+        <div class="store-buttons">
+          <a href="https://apps.apple.com/app/id982107779" class="store-button" target="_blank">
+            <img src="https://apps.apple.com/assets/images/favicon/favicon-apps-48-fad34e0d87e86dcf72ded1faff4ba9d0.png" alt="" />
+            App Store
+          </a>
+          <a href="https://play.google.com/store/apps/details?id=host.exp.exponent" class="store-button" target="_blank">
+            <img src="https://www.gstatic.com/android/market_images/web/favicon_v3.ico" alt="" />
+            Google Play
+          </a>
+        </div>
+
+        <div class="features">
+          <div class="feature">
+            <div class="feature-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
+            <span class="feature-text">Real-time</span>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+            </div>
+            <span class="feature-text">Predictions</span>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+            </div>
+            <span class="feature-text">Local</span>
+          </div>
+        </div>
+
+        <div class="footer">
+          Made with care for your community
         </div>
       </div>
     </div>
@@ -158,35 +364,34 @@
         const contentEl = document.getElementById("content");
 
         const isAndroid = /Android/i.test(ua);
-
-        const isIOS =
-          /iPhone|iPad|iPod/i.test(ua) ||
-          (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+        const isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
         const deepLink = "exps://EXPS_URL_PLACEHOLDER";
 
         const qrCode = new QRCodeStyling({
-          width: 500,
-          height: 500,
+          width: 440,
+          height: 440,
           data: deepLink,
           image: "assets/images/icon.png",
           dotsOptions: {
-            color: "#000000",
+            color: "#0F172A",
             type: "rounded",
           },
           backgroundOptions: {
-            color: "#ffffff",
+            color: "#FFFFFF",
           },
           imageOptions: {
             crossOrigin: "anonymous",
             margin: 8,
-            imageSize: 0.4,
-            borderRadius: 8,
+            imageSize: 0.35,
+            borderRadius: 12,
           },
           cornersSquareOptions: {
+            color: "#2563EB",
             type: "extra-rounded",
           },
           cornersDotOptions: {
+            color: "#2563EB",
             type: "dot",
           },
           qrOptions: {
@@ -197,15 +402,15 @@
         qrCode.append(document.getElementById("qr-code"));
 
         if (isAndroid || isIOS) {
-          loadingEl.style.display = "block";
-          contentEl.style.display = "none";
+          loadingEl.classList.add("active");
+          contentEl.classList.add("hidden");
 
           window.location.href = deepLink;
 
           setTimeout(function () {
-            loadingEl.style.display = "none";
-            contentEl.style.display = "block";
-          }, 500);
+            loadingEl.classList.remove("active");
+            contentEl.classList.remove("hidden");
+          }, 800);
         }
       })();
     </script>
