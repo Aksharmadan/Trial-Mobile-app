@@ -1,19 +1,21 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, FlatList, ScrollView, RefreshControl, StyleSheet, ActivityIndicator } from "react-native";
+import { View, FlatList, ScrollView, RefreshControl, StyleSheet, ActivityIndicator, TextInput, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { Feather } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
 import { CategoryChip } from "@/components/CategoryChip";
 import { LocationCard } from "@/components/LocationCard";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { EmptyState } from "@/components/EmptyState";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing } from "@/constants/theme";
+import { Spacing, BorderRadius } from "@/constants/theme";
 import { apiRequest, queryClient } from "@/lib/query-client";
 import { HomeStackParamList } from "@/navigation/HomeStackNavigator";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -46,6 +48,8 @@ export default function HomeScreen() {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [queueStatuses, setQueueStatuses] = useState<Record<string, QueueStatus>>({});
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [hasError, setHasError] = useState(false);
 
   const { data: locationTypes = [], isLoading: typesLoading } = useQuery<LocationType[]>({
     queryKey: ["/api/location-types"],
@@ -73,19 +77,27 @@ export default function HomeScreen() {
 
   const fetchQueueStatuses = useCallback(async () => {
     const statuses: Record<string, QueueStatus> = {};
-    for (const loc of locations) {
+    let hasNetworkError = false;
+    
+    const promises = locations.map(async (loc) => {
       try {
-        const res = await fetch(`${process.env.EXPO_PUBLIC_DOMAIN ? `https://${process.env.EXPO_PUBLIC_DOMAIN}` : ""}/api/locations/${loc.id}/queue-status`);
-        if (res.ok) {
-          const data = await res.json();
-          statuses[loc.id] = {
-            estimatedWaitTime: data.estimatedWaitTime,
-            currentQueueSize: data.currentQueueSize,
-          };
-        }
-      } catch {}
-    }
+        const response = await apiRequest("GET", `/api/locations/${loc.id}/queue-status`);
+        const data = await response.json();
+        return { id: loc.id, data: { estimatedWaitTime: data.estimatedWaitTime, currentQueueSize: data.currentQueueSize } };
+      } catch (error) {
+        hasNetworkError = true;
+        return null;
+      }
+    });
+    
+    const results = await Promise.all(promises);
+    results.forEach((result) => {
+      if (result) {
+        statuses[result.id] = result.data;
+      }
+    });
     setQueueStatuses(statuses);
+    setHasError(hasNetworkError && results.every(r => r === null));
   }, [locations]);
 
   useFocusEffect(
@@ -103,9 +115,13 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
-  const filteredLocations = selectedType
-    ? locations.filter((loc) => loc.typeId === selectedType)
-    : locations;
+  const filteredLocations = locations.filter((loc) => {
+    const matchesType = !selectedType || loc.typeId === selectedType;
+    const matchesSearch = !searchQuery || 
+      loc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      loc.address.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesType && matchesSearch;
+  });
 
   const handleLocationPress = (location: Location) => {
     navigation.navigate("QueueStatus", { locationId: location.id, locationName: location.name });
@@ -136,9 +152,25 @@ export default function HomeScreen() {
         }
         ListHeaderComponent={
           <View style={styles.header}>
+            {hasError && <OfflineIndicator message="Unable to load queue data. Check your connection." />}
             <ThemedText type="h3" style={styles.sectionTitle}>
               Find a Location
             </ThemedText>
+            <View style={[styles.searchContainer, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}>
+              <Feather name="search" size={20} color={theme.textSecondary} />
+              <TextInput
+                style={[styles.searchInput, { color: theme.text }]}
+                placeholder="Search locations..."
+                placeholderTextColor={theme.textSecondary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              {searchQuery.length > 0 && (
+                <Pressable onPress={() => setSearchQuery("")} style={styles.clearButton}>
+                  <Feather name="x" size={18} color={theme.textSecondary} />
+                </Pressable>
+              )}
+            </View>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -235,5 +267,23 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: Spacing.md,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    marginBottom: Spacing.lg,
+    gap: Spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: Spacing.xs,
+  },
+  clearButton: {
+    padding: Spacing.xs,
   },
 });

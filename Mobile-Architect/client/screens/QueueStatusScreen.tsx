@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet, Pressable } from "react-native";
+import { View, ScrollView, RefreshControl, StyleSheet, Pressable, Share, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from "@react-navigation/native";
@@ -46,7 +46,8 @@ export default function QueueStatusScreen() {
 
   const { data, isLoading, refetch } = useQuery<QueueStatusData>({
     queryKey: ["/api/locations", locationId, "queue-status"],
-    refetchInterval: 30000,
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    refetchOnWindowFocus: true,
   });
 
   useEffect(() => {
@@ -89,15 +90,38 @@ export default function QueueStatusScreen() {
     navigation.navigate("CheckinModal", { locationId, locationName });
   };
 
+  const handleShare = async () => {
+    if (!data) return;
+    
+    const waitTimeText = data.estimatedWaitTime > 0 
+      ? `${data.estimatedWaitTime} minutes` 
+      : "No wait time data";
+    const trendEmoji = data.trend === "increasing" ? "📈" : data.trend === "decreasing" ? "📉" : "➡️";
+    
+    try {
+      await Share.share({
+        message: `QueueSense: ${data.location.name}\n\n⏱️ Estimated wait: ${waitTimeText}\n👥 People in queue: ${data.currentQueueSize}\n${trendEmoji} Trend: ${data.trend}\n\nCheck QueueSense for real-time queue updates!`,
+        title: `Queue Status - ${data.location.name}`,
+      });
+    } catch (error) {
+      // User cancelled or error occurred
+    }
+  };
+
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <Pressable onPress={handleToggleSave} style={styles.headerButton}>
-          <Feather name={isSaved ? "heart" : "heart"} size={22} color={isSaved ? theme.error : theme.text} />
-        </Pressable>
+        <View style={styles.headerButtons}>
+          <Pressable onPress={handleShare} style={styles.headerButton}>
+            <Feather name="share-2" size={22} color={theme.primary} />
+          </Pressable>
+          <Pressable onPress={handleToggleSave} style={styles.headerButton}>
+            <Feather name={isSaved ? "heart" : "heart"} size={22} color={isSaved ? theme.error : theme.text} fill={isSaved ? theme.error : "none"} />
+          </Pressable>
+        </View>
       ),
     });
-  }, [navigation, isSaved, theme]);
+  }, [navigation, isSaved, theme, data]);
 
   const formatTime = (isoString: string) => {
     const date = new Date(isoString);
@@ -180,6 +204,43 @@ export default function QueueStatusScreen() {
           <ThemedText style={[styles.locationAddress, { color: theme.textSecondary }]}>
             {data.location.address}
           </ThemedText>
+        </Card>
+      ) : null}
+
+      {data ? (
+        <Card elevation={1} style={styles.statsCard}>
+          <View style={styles.statsHeader}>
+            <Feather name="bar-chart-2" size={20} color={theme.primary} />
+            <ThemedText style={styles.statsTitle}>Quick Stats</ThemedText>
+          </View>
+          <View style={styles.statsGrid}>
+            <View style={styles.statItem}>
+              <ThemedText style={[styles.statValue, { color: theme.primary }]}>
+                {Math.round(data.confidence * 100)}%
+              </ThemedText>
+              <ThemedText style={[styles.statLabel, { color: theme.textSecondary }]}>
+                Confidence
+              </ThemedText>
+            </View>
+            <View style={[styles.statDivider, { backgroundColor: theme.border }]} />
+            <View style={styles.statItem}>
+              <ThemedText style={[styles.statValue, { color: theme.success }]}>
+                {data.currentQueueSize}
+              </ThemedText>
+              <ThemedText style={[styles.statLabel, { color: theme.textSecondary }]}>
+                In Queue
+              </ThemedText>
+            </View>
+            <View style={[styles.statDivider, { backgroundColor: theme.border }]} />
+            <View style={styles.statItem}>
+              <ThemedText style={[styles.statValue, { color: data.trend === "decreasing" ? theme.success : data.trend === "increasing" ? theme.error : theme.warning }]}>
+                {data.trend === "increasing" ? "↑" : data.trend === "decreasing" ? "↓" : "→"}
+              </ThemedText>
+              <ThemedText style={[styles.statLabel, { color: theme.textSecondary }]}>
+                Trend
+              </ThemedText>
+            </View>
+          </View>
         </Card>
       ) : null}
     </ScrollView>
@@ -265,7 +326,45 @@ const styles = StyleSheet.create({
   locationAddress: {
     fontSize: 14,
   },
+  headerButtons: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+  },
   headerButton: {
     padding: Spacing.sm,
+  },
+  statsCard: {
+    marginTop: Spacing.lg,
+  },
+  statsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
+  statsTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  statsGrid: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  statItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: "700",
+    marginBottom: Spacing.xs,
+  },
+  statLabel: {
+    fontSize: 12,
+  },
+  statDivider: {
+    width: 1,
+    height: 50,
+    marginHorizontal: Spacing.md,
   },
 });

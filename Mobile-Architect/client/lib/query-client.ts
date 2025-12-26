@@ -5,13 +5,47 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
  * @returns {string} The API base URL
  */
 export function getApiUrl(): string {
+  // Try Replit domain first, then localhost
   let host = process.env.EXPO_PUBLIC_DOMAIN;
-
+  
   if (!host) {
-    throw new Error("EXPO_PUBLIC_DOMAIN is not set");
+    // Try to get from Constants (Expo)
+    try {
+      const Constants = require('expo-constants').default;
+      if (Constants?.expoConfig?.extra?.apiUrl) {
+        host = Constants.expoConfig.extra.apiUrl.replace(/^https?:\/\//, '');
+      }
+    } catch (e) {
+      // Constants not available
+    }
+    
+    if (!host) {
+      // For mobile devices, use the computer's local IP or localhost
+      // On web, use localhost
+      if (typeof window !== 'undefined') {
+        // Web environment
+        host = "localhost:5000";
+      } else {
+        // React Native - default to localhost, but user should set EXPO_PUBLIC_DOMAIN
+        // We'll try to detect from the Metro bundler URL if available
+        host = "localhost:5000";
+      }
+    }
   }
 
-  let url = new URL(`https://${host}`);
+  // Handle cases where host might already include protocol
+  if (host.startsWith("http://") || host.startsWith("https://")) {
+    return host;
+  }
+
+  // Use http for localhost/127.0.0.1/local IPs, https for other domains
+  const isLocal = host.includes("localhost") || 
+                  host.includes("127.0.0.1") || 
+                  host.match(/^192\.168\./) ||
+                  host.match(/^10\./) ||
+                  host.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./);
+  const protocol = isLocal ? "http" : "https";
+  let url = new URL(`${protocol}://${host}`);
 
   return url.href;
 }
@@ -69,11 +103,13 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
+      staleTime: 30000, // 30 seconds
+      retry: 2, // Retry failed requests twice
+      retryDelay: 1000, // Wait 1 second between retries
     },
     mutations: {
-      retry: false,
+      retry: 1,
+      retryDelay: 1000,
     },
   },
 });

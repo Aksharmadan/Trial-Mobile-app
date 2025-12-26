@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
+import React, { useState, useCallback, useEffect } from "react";
+import { View, ScrollView, RefreshControl, StyleSheet, Alert, Pressable, Modal } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -14,6 +14,19 @@ import { EmptyState } from "@/components/EmptyState";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { getSavedLocations, SavedLocation } from "@/lib/storage";
+
+type LocationType = {
+  id: string;
+  name: string;
+  icon: string;
+};
+
+type Location = {
+  id: string;
+  name: string;
+  address: string;
+  typeId: string;
+};
 
 type TimeSlotData = {
   dayOfWeek: number;
@@ -39,6 +52,15 @@ export default function PredictionsScreen() {
   const [savedLocations, setSavedLocations] = useState<SavedLocation[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  
+  const { data: locationTypes = [] } = useQuery<LocationType[]>({
+    queryKey: ["/api/location-types"],
+  });
+
+  const { data: allLocations = [] } = useQuery<Location[]>({
+    queryKey: ["/api/locations"],
+  });
 
   const loadSavedLocations = useCallback(async () => {
     const locations = await getSavedLocations();
@@ -89,16 +111,31 @@ export default function PredictionsScreen() {
     return `${hour}:00 AM`;
   };
 
-  const selectedLocation = savedLocations.find((l) => l.id === selectedLocationId);
+  const selectedLocation = savedLocations.find((l) => l.id === selectedLocationId) || 
+    allLocations.find((l) => l.id === selectedLocationId);
 
-  if (savedLocations.length === 0) {
+  const handleLocationSelect = (location: Location | SavedLocation) => {
+    setSelectedLocationId(location.id);
+    setShowLocationPicker(false);
+  };
+
+  useEffect(() => {
+    if (!selectedLocationId && (savedLocations.length > 0 || allLocations.length > 0)) {
+      const defaultLocation = savedLocations[0] || allLocations[0];
+      if (defaultLocation) {
+        setSelectedLocationId(defaultLocation.id);
+      }
+    }
+  }, [selectedLocationId, savedLocations, allLocations]);
+
+  if (savedLocations.length === 0 && allLocations.length === 0) {
     return (
       <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
         <View style={{ paddingTop: headerHeight + Spacing["3xl"], flex: 1, justifyContent: "center" }}>
           <EmptyState
             icon="heart"
-            title="No Saved Locations"
-            description="Save your favorite locations to see best time recommendations and patterns."
+            title="No Locations Available"
+            description="Locations will appear here once they're available."
           />
         </View>
       </View>
@@ -117,12 +154,16 @@ export default function PredictionsScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={theme.primary} />
       }
     >
-      {selectedLocation ? (
-        <View style={styles.locationHeader}>
-          <Feather name="map-pin" size={16} color={theme.primary} />
-          <ThemedText style={styles.locationName}>{selectedLocation.name}</ThemedText>
-        </View>
-      ) : null}
+      <Pressable 
+        onPress={() => setShowLocationPicker(true)}
+        style={[styles.locationHeader, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}
+      >
+        <Feather name="map-pin" size={16} color={theme.primary} />
+        <ThemedText style={styles.locationName} numberOfLines={1}>
+          {selectedLocation ? selectedLocation.name : "Select Location"}
+        </ThemedText>
+        <Feather name="chevron-down" size={16} color={theme.textSecondary} />
+      </Pressable>
 
       {bestTimes.length > 0 ? (
         <Card elevation={1} style={styles.recommendationCard}>
@@ -189,6 +230,104 @@ export default function PredictionsScreen() {
           </View>
         </View>
       </Card>
+
+      <Modal
+        visible={showLocationPicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowLocationPicker(false)}
+      >
+        <Pressable 
+          style={styles.modalOverlay}
+          onPress={() => setShowLocationPicker(false)}
+        >
+          <Pressable 
+            style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
+              <ThemedText type="h4">Select Location</ThemedText>
+              <Pressable onPress={() => setShowLocationPicker(false)}>
+                <Feather name="x" size={24} color={theme.text} />
+              </Pressable>
+            </View>
+            <ScrollView style={styles.modalList}>
+              {savedLocations.length > 0 && (
+                <>
+                  <ThemedText style={[styles.sectionLabel, { color: theme.textSecondary }]}>
+                    Saved Locations
+                  </ThemedText>
+                  {savedLocations.map((loc) => (
+                    <Pressable
+                      key={loc.id}
+                      onPress={() => handleLocationSelect(loc)}
+                      style={[
+                        styles.locationItem,
+                        { 
+                          backgroundColor: selectedLocationId === loc.id ? theme.primary + "15" : "transparent",
+                          borderBottomColor: theme.border 
+                        }
+                      ]}
+                    >
+                      <View style={styles.locationItemContent}>
+                        <Feather name="heart" size={16} color={selectedLocationId === loc.id ? theme.primary : theme.textSecondary} />
+                        <View style={styles.locationItemText}>
+                          <ThemedText style={styles.locationItemName}>{loc.name}</ThemedText>
+                          <ThemedText style={[styles.locationItemAddress, { color: theme.textSecondary }]}>
+                            {loc.address}
+                          </ThemedText>
+                        </View>
+                      </View>
+                      {selectedLocationId === loc.id && (
+                        <Feather name="check" size={20} color={theme.primary} />
+                      )}
+                    </Pressable>
+                  ))}
+                </>
+              )}
+              {allLocations.length > 0 && (
+                <>
+                  <ThemedText style={[styles.sectionLabel, { color: theme.textSecondary, marginTop: savedLocations.length > 0 ? Spacing.lg : 0 }]}>
+                    All Locations
+                  </ThemedText>
+                  {allLocations
+                    .filter(loc => !savedLocations.some(saved => saved.id === loc.id))
+                    .map((loc) => (
+                      <Pressable
+                        key={loc.id}
+                        onPress={() => handleLocationSelect(loc)}
+                        style={[
+                          styles.locationItem,
+                          { 
+                            backgroundColor: selectedLocationId === loc.id ? theme.primary + "15" : "transparent",
+                            borderBottomColor: theme.border 
+                          }
+                        ]}
+                      >
+                        <View style={styles.locationItemContent}>
+                          <Feather 
+                            name={locationTypes.find(t => t.id === loc.typeId)?.icon || "map-pin"} 
+                            size={16} 
+                            color={selectedLocationId === loc.id ? theme.primary : theme.textSecondary} 
+                          />
+                          <View style={styles.locationItemText}>
+                            <ThemedText style={styles.locationItemName}>{loc.name}</ThemedText>
+                            <ThemedText style={[styles.locationItemAddress, { color: theme.textSecondary }]}>
+                              {loc.address}
+                            </ThemedText>
+                          </View>
+                        </View>
+                        {selectedLocationId === loc.id && (
+                          <Feather name="check" size={20} color={theme.primary} />
+                        )}
+                      </Pressable>
+                    ))}
+                </>
+              )}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScrollView>
   );
 }
@@ -202,6 +341,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: Spacing.sm,
     marginBottom: Spacing.lg,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
   },
   locationName: {
     fontSize: 16,
@@ -291,5 +433,59 @@ const styles = StyleSheet.create({
   },
   legendText: {
     fontSize: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    borderTopLeftRadius: BorderRadius["2xl"],
+    borderTopRightRadius: BorderRadius["2xl"],
+    maxHeight: "80%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: Spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.1)",
+  },
+  modalList: {
+    maxHeight: 500,
+  },
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    marginTop: Spacing.md,
+  },
+  locationItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: Spacing.lg,
+    borderBottomWidth: 1,
+  },
+  locationItemContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    flex: 1,
+  },
+  locationItemText: {
+    flex: 1,
+  },
+  locationItemName: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  locationItemAddress: {
+    fontSize: 13,
+    marginTop: 2,
   },
 });
